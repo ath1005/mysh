@@ -19,10 +19,10 @@ history create_history(int length){
 
 	h = malloc(sizeof(struct history_s));
 
-	h->cmdHistory = malloc(length * sizeof(char*));
+	h->cmdHistory = calloc(length, sizeof(char*));
 
 	for(int i = 0; i < length; i++){
-		h->cmdHistory[i] = malloc(256 * sizeof(char*));
+		h->cmdHistory[i] = malloc(256 * sizeof(char));
 	}
 
 	h->length = length;
@@ -45,38 +45,55 @@ void prompt(int counter){
 	printf("mysh[%d]> ", counter);	
 }
 
+int history_cmd(int argc, char * argv[], char *history[10], int current){
+	int index = current % 10;
+	for(int i = 0; i < 10; i++){
+		printf("%d %s\n", current - (10 - i), history[index]);
+		index++;
+		index = index % 10;
+	}
+}
+
 int main(int argc, char *argv[]){
 	char *buffer;
-	history h = create_history(10);
+	char *history[10];
+	for(int i = 0; i < 10; i++){
+		history[i] = 0;
+	}
+
+	int count = 0;
+	//history h = create_history(10);
 	size_t bufsize = 256;
 
 	buffer = malloc(bufsize * sizeof(char));
-	prompt(h->total);
-	getline(&buffer, &bufsize, stdin);
 
-	h->cmdHistory[h->total] = strtok(buffer, "\n");
+	//h->cmdHistory[h->total] = strtok(buffer, "\n");
 
-	printf("%s\n", h->cmdHistory[0]);
+	char * command;
+	char * token;
 
-	char * command = strtok(buffer, " \n");
-
-	while(strcmp(command, "quit")){
-		printf("%s\n", buffer);
-
-		char * token = strtok(NULL, " \n");
-		while(token != NULL){
-			printf("%s\n", token);
-			token = strtok(NULL, " \n");
-		}
-		
-		h->total++;
-		prompt(h->total);
+	while(1){
+		prompt(count);
 		getline(&buffer, &bufsize, stdin);
-		h->cmdHistory[h->total] = strtok(buffer, "\n");
-		command = strtok(buffer, " \n");
+		free(history[count % 10]);
+
+		history[count % 10] = strdup(strtok(buffer, "\n"));
+		count++;
+
+		command = strtok(buffer, " \n"); 
+		if(strcmp(command, "quit") == 0){
+			break;
+		}
+
+		while(token != NULL){
+			token = strtok(NULL, " \n");
+			printf("%s\n", token);
+		}
 	}
+
+	history_cmd(argc, argv, history, count);
 	
-	destroy_history(h);
+	//destroy_history(h);
 	free(buffer);	
 	return EXIT_SUCCESS;
 }
