@@ -30,6 +30,11 @@ history create_history(int count){
 	return h;
 }
 
+void destroy_history(history h){
+	free(h->numHistory);
+	free(h);
+}
+
 int prompt(int counter){
 	printf("mysh[%d]> ", counter);
 	counter++;
@@ -55,7 +60,8 @@ int main(int argc, char *argv[]){
 		getline(&buffer, &bufsize, stdin);
 		command = strtok(buffer, " \n");
 	}
-
+	
+	destroy_history(h);
 	free(buffer);	
 	return EXIT_SUCCESS;
 }
