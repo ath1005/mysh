@@ -6,58 +6,39 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct history_s{
-	int total;
-	char ** cmdHistory;
-	int length;
-};
-
-typedef struct history_s *history;
-
-history create_history(int length){
-	history h = NULL;
-
-	h = malloc(sizeof(struct history_s));
-
-	h->cmdHistory = calloc(length, sizeof(char*));
-
-	for(int i = 0; i < length; i++){
-		h->cmdHistory[i] = malloc(256 * sizeof(char));
-	}
-
-	h->length = length;
-
-	h->total = 0;
-
-	return h;
-}
-
-void destroy_history(history h){
-	for(int i = 0; i < h->length; i++){
-		free(h->cmdHistory[i]);
-	}
-	
-	free(h->cmdHistory);
-	free(h);
-}
-
 void prompt(int counter){
 	printf("mysh[%d]> ", counter);	
 }
 
-int history_cmd(int argc, char * argv[], char *history[10], int current){
-	int index = current % 10;
-	for(int i = 0; i < 10; i++){
-		printf("%d %s\n", current - (10 - i), history[index]);
-		index++;
-		index = index % 10;
+int history_cmd(int argc, char * argv[], int length, char *history[length], int current){
+	int index = current % length;
+
+	if(current < length){
+		for(int i = 0; i < current; i++){
+			printf("%d %s\n", i, history[i]);
+		}
 	}
+	else{
+		for(int i = 0; i < length; i++){
+			printf("%d %s\n", current - (length - i), history[index]);
+			index++;
+			index = index % length;
+		}
+	}
+}
+
+int help_cmd(int argc, char * argv[]){
+	printf("Internal commands:\n");
+	printf("Bang command: !N\t\t\ttRe-execute the Nth command in the hisroty list\n");
+	printf("Help command: help\t\t\tPrint this help menu\n");
+	printf("History command: history\t\tPrint a list of past commands and their arguments\n");
+	printf("Quit command: quit\t\t\tClean up memory and gracefully terminate the shell\n");
+	printf("Verbose command: verbose on | off\tPrint the commands and the results of major operations during their execution\n");	
 }
 
 int main(int argc, char *argv[]){
 	char *buffer;
 	int length = 10;
-	char * history[10];
 	if(argc > 1){
 		if(strcmp(argv[1], "-v") == 0){
 			//Verbose command on
@@ -66,28 +47,32 @@ int main(int argc, char *argv[]){
 		else if(strcmp(argv[1], "-h") == 0){
 			if(argc == 3){
 				length = strtol(argv[2], NULL, 10);
-				char * history[length];
+				if(length <= 0){
+					fprintf(stderr, "usage: mysh [-v] [-h pos_num]\n");
+					return EXIT_FAILURE;
+				}
 			}
 			else{
-				printf("usage: mysh [-v] [-h pos_num]\n");
+				fprintf(stderr, "usage: mysh [-v] [-h pos_num]\n");
+				return EXIT_FAILURE;
 			}	
 		}
 		else{
-			printf("usage: mysh [-v] [-h pos_num]\n");
+			fprintf(stderr, "usage: mysh [-v] [-h pos_num]\n");
+			return EXIT_FAILURE;
 		}
 	}
+	
+	char * history[length];
 
-	for(int i = 0; i < 10; i++){
+	for(int i = 0; i < length; i++){
 		history[i] = 0;
 	}
 
 	int count = 0;
-	//history h = create_history(10);
 	size_t bufsize = 256;
 
 	buffer = malloc(bufsize * sizeof(char));
-
-	//h->cmdHistory[h->total] = strtok(buffer, "\n");
 
 	char * command;
 	char * token;
@@ -96,37 +81,40 @@ int main(int argc, char *argv[]){
 		prompt(count);
 		getline(&buffer, &bufsize, stdin);
 		free(history[count % 10]);
-
+		
+		if(strtok(buffer, "\n") == NULL){
+			printf("test\n");
+			break;
+		}
 		history[count % 10] = strdup(strtok(buffer, "\n"));
 		count++;
 
-		command = strtok(buffer, " \n"); 
+		command = strtok(buffer, " \n");
 		if(strcmp(command, "quit") == 0){
 			break;
 		}
 
 		while(token != NULL){
 			token = strtok(NULL, " \n");
-			printf("%s\n", token);
+			//printf("%s\n", token);
 		}
 		
 		if(strcmp(command, "history") == 0){
-			history_cmd(argc, argv, history, count);
+			history_cmd(argc, argv, length, history, count);
 		}
 		else if(strcmp(command, "!") == 0){
 			//Bang command
 		}
 		else if(strcmp(command, "help") == 0){
-			//Help command
+			help_cmd(argc, argv);
 		}
 		else if(strcmp(command, "verbose") == 0){
 			//Verbose command
 		}
 	}
 
-	history_cmd(argc, argv, history, count);
+	history_cmd(argc, argv, length, history, count);
 	
-	//destroy_history(h);
 	free(buffer);	
 	return EXIT_SUCCESS;
 }
