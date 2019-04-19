@@ -56,7 +56,27 @@ int history_cmd(int argc, char * argv[], char *history[10], int current){
 
 int main(int argc, char *argv[]){
 	char *buffer;
-	char *history[10];
+	int length = 10;
+	char * history[10];
+	if(argc > 1){
+		if(strcmp(argv[1], "-v") == 0){
+			//Verbose command on
+			printf("verbose on\n");
+		}
+		else if(strcmp(argv[1], "-h") == 0){
+			if(argc == 3){
+				length = strtol(argv[2], NULL, 10);
+				char * history[length];
+			}
+			else{
+				printf("usage: mysh [-v] [-h pos_num]\n");
+			}	
+		}
+		else{
+			printf("usage: mysh [-v] [-h pos_num]\n");
+		}
+	}
+
 	for(int i = 0; i < 10; i++){
 		history[i] = 0;
 	}
@@ -88,6 +108,19 @@ int main(int argc, char *argv[]){
 		while(token != NULL){
 			token = strtok(NULL, " \n");
 			printf("%s\n", token);
+		}
+		
+		if(strcmp(command, "history") == 0){
+			history_cmd(argc, argv, history, count);
+		}
+		else if(strcmp(command, "!") == 0){
+			//Bang command
+		}
+		else if(strcmp(command, "help") == 0){
+			//Help command
+		}
+		else if(strcmp(command, "verbose") == 0){
+			//Verbose command
 		}
 	}
 
