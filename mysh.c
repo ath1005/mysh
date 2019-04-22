@@ -2,6 +2,7 @@
 /// description: TODO
 /// author: Atlee Hasson
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -52,12 +53,31 @@ int help_cmd(int argc, char * argv[]){
 	return 1;
 }
 
-int bang_cmd(int argc, char * argv[], int command, char * history[]){
-	char * target = history[command];
+int bang_cmd(int argc, char * argv[], char * command, char * history[], int length, int count, char * args[]){
+	(void)argc;
+	(void)argv;
+	for(int i = 0; i < (int)strlen(command); i++){
+		command[i] = command[i+1];
+	}
+	int num = strtol(command, NULL, 10);
+	if(num <= count && num > count - length){
+		int counter = 0;
+		char * token2 = strtok(history[(num % (count - length)) - 1], " ");
+		while(token2 != NULL){
+			args[counter] = token2;
+			token2 = strtok(NULL, " ");
+		}
+	}
+	else{
+		fprintf(stderr, "Command is outside of the history range!\n");
+	}
+
 	return 1;
 }
 
 int execute_command(int argc, char * argv[], int count, char * history[], int length){
+	(void)argc;
+	(void)argv;
 	char * token;
 	char * command;
 	char * args[100];
@@ -75,7 +95,7 @@ int execute_command(int argc, char * argv[], int count, char * history[], int le
 	if(strtok(buffer, "\n") == NULL){
         	printf("test\n");
 		free(buffer);
-       		return 1;
+       		return 0;
         }
         history[count % 10] = strdup(strtok(buffer, "\n"));
 	count++;
@@ -84,7 +104,7 @@ int execute_command(int argc, char * argv[], int count, char * history[], int le
 	args[0] = command;
 	if(strcmp(command, "quit") == 0){
 		free(buffer);
-		return 1;
+		return 0;
 	}
 	
 	token = strtok(NULL, " \n");
@@ -96,7 +116,9 @@ int execute_command(int argc, char * argv[], int count, char * history[], int le
 	}
 
 	if(command[0] == '!'){
-                for(int i = 0; i < strlen(command); i++){
+		bang_cmd(argc, argv, command, history, length, count, args);
+		/**
+                for(int i = 0; i < (int)strlen(command); i++){
                         command[i] = command[i+1];
                 }
                 int num = strtol(command, NULL, 10);
@@ -110,7 +132,7 @@ int execute_command(int argc, char * argv[], int count, char * history[], int le
                 }
                 else{
                         fprintf(stderr, "Command is outside of the history range!\n");
-                }
+                }*/
         }
 
 	if(strcmp(args[0], "history") == 0){
@@ -128,9 +150,8 @@ int execute_command(int argc, char * argv[], int count, char * history[], int le
 			pid_t id, my_id;
 		        int status;
 
-		        // start by having the original process report its identity
-
-        		my_id = getpid();   // ask OS for our PID
+        		my_id = getpid();
+			(void)my_id;
 		       	printf( "Initial process has PID %d\n", my_id );
 		        fflush( stdout );
 
@@ -174,7 +195,6 @@ int execute_command(int argc, char * argv[], int count, char * history[], int le
 
 		else{	
 			pid_t id, my_id;
-		        char *argv[4];
 			int status;
 
 			my_id = getpid();
@@ -211,7 +231,6 @@ int execute_command(int argc, char * argv[], int count, char * history[], int le
 }
 
 int main(int argc, char *argv[]){
-	char *buffer;
 	int length = 10;
 	if(argc > 1){
 		if(strcmp(argv[1], "-v") == 0){
@@ -259,7 +278,7 @@ int main(int argc, char *argv[]){
 	int count = 0;
 
 	while(1){
-		if(execute_command(argc, argv, count, history, length) == 1){
+		if(execute_command(argc, argv, count, history, length) == 0){
 			break;
 		}
 		count++;
