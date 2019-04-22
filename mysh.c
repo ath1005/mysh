@@ -81,21 +81,32 @@ int execute_command(int argc, char * argv[], int count, char * history[], int le
 		i++;
 	}
 
-	if(strcmp(command, "history") == 0){
+	if(command[0] == '!'){
+                for(int i = 0; i < strlen(command); i++){
+                        command[i] = command[i+1];
+                }
+                int num = strtol(command, NULL, 10);
+                if(num <= count && num > count - length){
+                        int counter = 0;
+                        char * token2 = strtok(history[(num % (count - length)) - 1], " ");
+                        while(token2 != NULL){
+				args[counter] = token2;
+                                token2 = strtok(NULL, " ");
+                        }
+                }
+                else{
+                        fprintf(stderr, "Command is outside of the history range!\n");
+                }
+        }
+
+	if(strcmp(args[0], "history") == 0){
 		history_cmd(argc, argv, length, history, count);
 	}
 
-	else if(command[0] == '!'){
-		for(int i = 0; i < strlen(command); i++){
-			command[i] = command[i+1];
-		}
-		int num = strtol(command, NULL, 10);
-		printf("%d\n", num);
-	}
-	else if(strcmp(command, "help") == 0){
+	else if(strcmp(args[0], "help") == 0){
 		help_cmd(argc, argv);
 	}
-	else if(strcmp(command, "verbose") == 0){
+	else if(strcmp(args[0], "verbose") == 0){
 		//Verbose command
 	}
 	else{
@@ -117,10 +128,9 @@ int execute_command(int argc, char * argv[], int count, char * history[], int le
         	case 0:
 
                 	my_id = getpid();
-                	printf( "Child is PID %d, running 'echo'\n", my_id );
+                	printf( "Child is PID %d, running %s\n", my_id, args[0]);
 
 			execvp( command, args );
-
 		}
 
 		id = wait( &status );
