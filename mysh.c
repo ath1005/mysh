@@ -5,9 +5,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 void prompt(int counter){
-	printf("mysh[%d]> ", counter);	
+	printf("mysh[%d]> ", counter+1);	
 }
 
 int history_cmd(int argc, char * argv[], int length, char * history[], int current){
@@ -15,12 +18,12 @@ int history_cmd(int argc, char * argv[], int length, char * history[], int curre
 
 	if(current < length){
 		for(int i = 0; i < current; i++){
-			printf("%d %s\n", i, history[i]);
+			printf("%d %s\n", i+1, history[i]);
 		}
 	}
 	else{
 		for(int i = 0; i < length; i++){
-			printf("%d %s\n", current - (length - i), history[index]);
+			printf("%d %s\n", current - (length - i+1), history[index]);
 			index++;
 			index = index % length;
 		}
@@ -29,7 +32,7 @@ int history_cmd(int argc, char * argv[], int length, char * history[], int curre
 
 int help_cmd(int argc, char * argv[]){
 	printf("Internal commands:\n");
-	printf("Bang command: !N\t\t\tRe-execute the Nth command in the hisroty list\n");
+	printf("Bang command: !N\t\t\tRe-execute the Nth command in the history list\n");
 	printf("Help command: help\t\t\tPrint this help menu\n");
 	printf("History command: history\t\tPrint a list of past commands and their arguments\n");
 	printf("Quit command: quit\t\t\tClean up memory and gracefully terminate the shell\n");
@@ -43,8 +46,13 @@ int bang_cmd(int argc, char * argv[], int command, char * history[]){
 int execute_command(int argc, char * argv[], int count, char * history[], int length){
 	char * token;
 	char * command;
+	char * args[100];
 	size_t bufsize = 256;
 	char * buffer = malloc(bufsize * sizeof(char));
+
+	for(int i = 0; i < 100; i++){
+		args[i] = 0;
+	}
 
 	prompt(count);
         getline(&buffer, &bufsize, stdin);
@@ -52,23 +60,31 @@ int execute_command(int argc, char * argv[], int count, char * history[], int le
 
 	if(strtok(buffer, "\n") == NULL){
         	printf("test\n");
+		free(buffer);
        		return 1;
         }
         history[count % 10] = strdup(strtok(buffer, "\n"));
 	count++;
 
 	command = strtok(buffer, " \n");
+	args[0] = command;
 	if(strcmp(command, "quit") == 0){
+		free(buffer);
 		return 1;
 	}
-
+	
+	token = strtok(NULL, " \n");
+	int i = 1;
 	while(token != NULL){
+		args[i] = token;
 		token = strtok(NULL, " \n");
+		i++;
 	}
 
 	if(strcmp(command, "history") == 0){
 		history_cmd(argc, argv, length, history, count);
 	}
+
 	else if(command[0] == '!'){
 		for(int i = 0; i < strlen(command); i++){
 			command[i] = command[i+1];
@@ -81,6 +97,39 @@ int execute_command(int argc, char * argv[], int count, char * history[], int le
 	}
 	else if(strcmp(command, "verbose") == 0){
 		//Verbose command
+	}
+	else{
+		pid_t id, my_id;
+	        char *argv[4];
+		int status;
+
+		my_id = getpid();
+		printf( "Initial process has PID %d\n", my_id );
+		fflush( stdout );
+
+		id = fork();
+		switch( id ) {
+
+        	case -1:
+                	perror( "fork" );
+                	exit( EXIT_FAILURE );
+
+        	case 0:
+
+                	my_id = getpid();
+                	printf( "Child is PID %d, running 'echo'\n", my_id );
+
+			execvp( command, args );
+
+		}
+
+		id = wait( &status );
+	        if( id < 0 ) {
+        	        perror( "wait" );
+	        } else {
+        	        printf( "Parent: child %d terminated, status %d\n",
+                	        id, WEXITSTATUS(status) );
+		}
 	}
 	free(buffer);
 }
@@ -119,58 +168,12 @@ int main(int argc, char *argv[]){
 	}
 
 	int count = 0;
-	//size_t bufsize = 256;
-
-	//buffer = malloc(bufsize * sizeof(char));
-
-	//char * command;
-	//char * token;
 
 	while(1){
 		if(execute_command(argc, argv, count, history, length) == 1){
 			break;
 		}
 		count++;
-		/**
-		prompt(count);
-		getline(&buffer, &bufsize, stdin);
-		free(history[count % 10]);
-		
-		if(strtok(buffer, "\n") == NULL){
-			printf("test\n");
-			break;
-		}
-		history[count % 10] = strdup(strtok(buffer, "\n"));
-		count++;
-
-		command = strtok(buffer, " \n");
-		if(strcmp(command, "quit") == 0){
-			break;
-		}
-
-		while(token != NULL){
-			token = strtok(NULL, " \n");
-		}
-		
-		if(strcmp(command, "history") == 0){
-			history_cmd(argc, argv, length, history, count);
-		}
-		else if(command[0] == '!'){
-			for(int i = 0; i < strlen(command); i++){
-				command[i] = command[i+1];
-			}
-			int num = strtol(command, NULL, 10);
-			printf("%d\n", num);
-		}
-		else if(strcmp(command, "help") == 0){
-			help_cmd(argc, argv);
-		}
-		else if(strcmp(command, "verbose") == 0){
-			//Verbose command
-		}
-		*/
-	}
-
-	//free(buffer);	
+	}	
 	return EXIT_SUCCESS;
 }
