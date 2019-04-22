@@ -44,6 +44,8 @@ void prompt(int counter){
  * return - success of the function
  */
 int history_cmd(int argc, char * argv[], int length, char * history[], int current){
+	(void)argc;
+	(void)argv;
 	int index = current % length;
 
 	if(current < length){
@@ -68,6 +70,8 @@ int history_cmd(int argc, char * argv[], int length, char * history[], int curre
  * return - success of the function
  */
 int help_cmd(int argc, char * argv[]){
+	(void)argc;
+	(void)argv;
 	printf("Internal commands:\n");
 	printf("Bang command: !N\t\t\tRe-execute the Nth command in the history list\n");
 	printf("Help command: help\t\t\tPrint this help menu\n");
