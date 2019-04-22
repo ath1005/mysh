@@ -9,7 +9,16 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-
+int isAFile(char * file){
+	FILE * fp;
+	if((fp = fopen(file, "r")) == NULL){
+			return 0;
+	}
+	else{
+		fclose(fp);
+		return 1;
+	}
+}
 
 void prompt(int counter){
 	printf("mysh[%d]> ", counter+1);	
@@ -112,35 +121,86 @@ int execute_command(int argc, char * argv[], int count, char * history[], int le
 		//Verbose command
 	}
 	else{
-		pid_t id, my_id;
-	        char *argv[4];
-		int status;
+		if(isAFile(args[0])){
+			pid_t id, my_id;
+		        int status;
 
-		my_id = getpid();
-		printf( "Initial process has PID %d\n", my_id );
-		fflush( stdout );
+		        // start by having the original process report its identity
 
-		id = fork();
-		switch( id ) {
+        		my_id = getpid();   // ask OS for our PID
+		       	printf( "Initial process has PID %d\n", my_id );
+		        fflush( stdout );
 
-        	case -1:
-                	perror( "fork" );
-                	exit( EXIT_FAILURE );
+		        // create the child process
 
-        	case 0:
+		        id = fork();
+		        switch( id ) {
 
-                	my_id = getpid();
-                	printf( "Child is PID %d, running %s\n", my_id, args[0]);
+		        case -1: // the fork() failed
+	       		        perror( "fork" );
+	        	        exit( EXIT_FAILURE );
 
-			execvp( command, args );
+		        case 0: // we are the child process
+
+        		        // report our identity
+		                my_id = getpid();
+        		        printf( "Child is PID %d\n", my_id);
+        		        execv(args[0],  args);
+
+		                perror( "execv" );
+
+		                _exit( EXIT_FAILURE );
+
+	        	        break;
+
+		        default: // we are the parent
+		                break;
+
+		        }
+
+		        // parent will wait for child to exit
+		        id = wait( &status );
+		        if( id < 0 ) {
+		                perror( "wait" );
+		        } else {
+		                printf( "Parent: child %d terminated, status %d\n",
+	        	                id, WEXITSTATUS(status) );
+		        }
+			puts( "Parent is now exiting." );
 		}
 
-		id = wait( &status );
-	        if( id < 0 ) {
-        	        perror( "wait" );
-	        } else {
-        	        printf( "Parent: child %d terminated, status %d\n",
-                	        id, WEXITSTATUS(status) );
+		else{	
+			pid_t id, my_id;
+		        char *argv[4];
+			int status;
+
+			my_id = getpid();
+			(void)my_id;
+			printf( "Initial process has PID %d\n", my_id );
+			fflush( stdout );
+
+			id = fork();
+			switch( id ) {
+
+        		case -1:
+                		perror( "fork" );
+	                	exit( EXIT_FAILURE );
+
+        		case 0:
+
+                		my_id = getpid();
+	                	printf( "Child is PID %d, running %s\n", my_id, args[0]);
+
+				execvp( command, args );
+			}
+
+			id = wait( &status );
+		        if( id < 0 ) {
+        		        perror( "wait" );
+		        } else {
+        		        printf( "Parent: child %d terminated, status %d\n",
+                		        id, WEXITSTATUS(status) );
+			}
 		}
 	}
 	free(buffer);
