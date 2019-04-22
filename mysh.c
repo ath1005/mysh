@@ -9,6 +9,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+
+
 void prompt(int counter){
 	printf("mysh[%d]> ", counter+1);	
 }
@@ -23,7 +25,7 @@ int history_cmd(int argc, char * argv[], int length, char * history[], int curre
 	}
 	else{
 		for(int i = 0; i < length; i++){
-			printf("%d %s\n", current - (length - i+1), history[index]);
+			printf("%d %s\n", current - (length - i - 1), history[index]);
 			index++;
 			index = index % length;
 		}
@@ -151,9 +153,22 @@ int main(int argc, char *argv[]){
 		if(strcmp(argv[1], "-v") == 0){
 			//Verbose command on
 			printf("verbose on\n");
+			if(strcmp(argv[2], "-h") == 0){
+				if(argc == 4){
+					length = strtol(argv[3], NULL, 10);
+					if(length <= 0){
+						fprintf(stderr, "usage: mysh [-v] [-h pos_num]\n");
+						return EXIT_FAILURE;
+					}
+				}
+				else{
+					fprintf(stderr, "usage: mysh [-v] [-h pos_num]\n");
+					return EXIT_FAILURE;
+				}
+			}
 		}
 		else if(strcmp(argv[1], "-h") == 0){
-			if(argc == 3){
+			if(argc == 3 || argc == 4){
 				length = strtol(argv[2], NULL, 10);
 				if(length <= 0){
 					fprintf(stderr, "usage: mysh [-v] [-h pos_num]\n");
