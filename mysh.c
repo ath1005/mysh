@@ -1,5 +1,7 @@
 /// file: mysh.c
-/// description: TODO
+/// description: This program acts as a shell that can excute external commands
+/// such as 'date' and 'echo' as well as internal commands like history and
+/// bang
 /// author: Atlee Hasson
 
 #define _GNU_SOURCE
@@ -10,6 +12,11 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+/**
+ * Checks for a file's existence
+ * param file - filename
+ * return - existence of the file
+ */
 int isAFile(char * file){
 	FILE * fp;
 	if((fp = fopen(file, "r")) == NULL){
@@ -21,10 +28,21 @@ int isAFile(char * file){
 	}
 }
 
+/**
+ * Prompts the user for input
+ */
 void prompt(int counter){
 	printf("mysh[%d]> ", counter+1);	
 }
 
+/**
+ * Prints the contents of the history array
+ * param argc - void
+ * param argv - void
+ * param length - length of the history array
+ * param current - current number of commands
+ * return - success of the function
+ */
 int history_cmd(int argc, char * argv[], int length, char * history[], int current){
 	int index = current % length;
 
@@ -43,6 +61,12 @@ int history_cmd(int argc, char * argv[], int length, char * history[], int curre
 	return 1;
 }
 
+/**
+ * Prints a list of internal commands and their description
+ * param argc - void
+ * param argv - void
+ * return - success of the function
+ */
 int help_cmd(int argc, char * argv[]){
 	printf("Internal commands:\n");
 	printf("Bang command: !N\t\t\tRe-execute the Nth command in the history list\n");
@@ -53,6 +77,17 @@ int help_cmd(int argc, char * argv[]){
 	return 1;
 }
 
+/**
+ * Repeats a previous command
+ * param argc - void
+ * param argv - void
+ * param command - command to be run
+ * param history - command history
+ * param length - length of the history array
+ * param count - number of commands executed
+ * param args - arguments of the command to execute
+ * return - success of the function
+ */
 int bang_cmd(int argc, char * argv[], char * command, char * history[], int length, int count, char * args[]){
 	(void)argc;
 	(void)argv;
@@ -75,6 +110,15 @@ int bang_cmd(int argc, char * argv[], char * command, char * history[], int leng
 	return 1;
 }
 
+/**
+ * Executes commands in the shell
+ * param argc - void
+ * param argv - void
+ * param count - number of commands received
+ * param history - history of commands
+ * param length - length of the history array
+ * return - status of the execution
+ */
 int execute_command(int argc, char * argv[], int count, char * history[], int length){
 	(void)argc;
 	(void)argv;
@@ -117,22 +161,6 @@ int execute_command(int argc, char * argv[], int count, char * history[], int le
 
 	if(command[0] == '!'){
 		bang_cmd(argc, argv, command, history, length, count, args);
-		/**
-                for(int i = 0; i < (int)strlen(command); i++){
-                        command[i] = command[i+1];
-                }
-                int num = strtol(command, NULL, 10);
-                if(num <= count && num > count - length){
-                        int counter = 0;
-                        char * token2 = strtok(history[(num % (count - length)) - 1], " ");
-                        while(token2 != NULL){
-				args[counter] = token2;
-                                token2 = strtok(NULL, " ");
-                        }
-                }
-                else{
-                        fprintf(stderr, "Command is outside of the history range!\n");
-                }*/
         }
 
 	if(strcmp(args[0], "history") == 0){
@@ -152,21 +180,17 @@ int execute_command(int argc, char * argv[], int count, char * history[], int le
 
         		my_id = getpid();
 			(void)my_id;
-		       	printf( "Initial process has PID %d\n", my_id );
-		        fflush( stdout );
-
-		        // create the child process
+		       	printf("Initial process has PID %d\n", my_id);
+		        fflush(stdout);
 
 		        id = fork();
 		        switch( id ) {
 
-		        case -1: // the fork() failed
+		        case -1:
 	       		        perror( "fork" );
 	        	        exit( EXIT_FAILURE );
 
-		        case 0: // we are the child process
-
-        		        // report our identity
+		        case 0:
 		                my_id = getpid();
         		        printf( "Child is PID %d\n", my_id);
         		        execv(args[0],  args);
@@ -177,12 +201,10 @@ int execute_command(int argc, char * argv[], int count, char * history[], int le
 
 	        	        break;
 
-		        default: // we are the parent
+		        default:
 		                break;
 
 		        }
-
-		        // parent will wait for child to exit
 		        id = wait( &status );
 		        if( id < 0 ) {
 		                perror( "wait" );
@@ -230,6 +252,12 @@ int execute_command(int argc, char * argv[], int count, char * history[], int le
 	return 1;
 }
 
+/**
+ * Runs the shell program
+ * param argc - number of command line arguments
+ * param argv - command line arguments
+ * @return - status of the exit
+ */ 
 int main(int argc, char *argv[]){
 	int length = 10;
 	if(argc > 1){
@@ -282,6 +310,10 @@ int main(int argc, char *argv[]){
 			break;
 		}
 		count++;
+	}
+	
+	for(int i = 0; i < length; i++){
+		free(history[i]);
 	}	
 	return EXIT_SUCCESS;
 }
