@@ -39,6 +39,7 @@ int history_cmd(int argc, char * argv[], int length, char * history[], int curre
 			index = index % length;
 		}
 	}
+	return 1;
 }
 
 int help_cmd(int argc, char * argv[]){
@@ -48,10 +49,12 @@ int help_cmd(int argc, char * argv[]){
 	printf("History command: history\t\tPrint a list of past commands and their arguments\n");
 	printf("Quit command: quit\t\t\tClean up memory and gracefully terminate the shell\n");
 	printf("Verbose command: verbose on | off\tPrint the commands and the results of major operations during their execution\n");	
+	return 1;
 }
 
 int bang_cmd(int argc, char * argv[], int command, char * history[]){
 	char * target = history[command];
+	return 1;
 }
 
 int execute_command(int argc, char * argv[], int count, char * history[], int length){
@@ -204,6 +207,7 @@ int execute_command(int argc, char * argv[], int count, char * history[], int le
 		}
 	}
 	free(buffer);
+	return 1;
 }
 
 int main(int argc, char *argv[]){
